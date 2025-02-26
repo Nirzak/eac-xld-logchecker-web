@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, send_file, url_for
 import subprocess
 import os
 import tempfile
-import sass
 import json
 from werkzeug.utils import secure_filename
 
@@ -15,22 +14,14 @@ ALLOWED_EXTENSIONS = {'log', 'txt'}
 
 # Store paths for generated files
 generated_html_path = None
-compiled_css_path = None
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Compile SCSS to CSS
-def compile_scss(scss_file_path):
-    with open(scss_file_path, 'r') as f:
-        scss_content = f.read()
-    css_output = sass.compile(string=scss_content)
-    return css_output
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    global generated_html_path, compiled_css_path
+    global generated_html_path
     output_url = None
     details_summary = {}
 
@@ -103,13 +94,9 @@ def index():
             # Exclude the "details" key
             details_summary = {k: v for k, v in details_json.items() if k != 'details'}
 
-            # Compile SCSS to CSS
-            css_fd, css_filepath = tempfile.mkstemp(suffix='.css')
-            os.close(css_fd)
-            compiled_css = compile_scss('styles/log.scss')
-            with open(css_filepath, 'w') as css_file:
-                css_file.write(compiled_css)
-            compiled_css_path = css_filepath
+
+            css_path="styles/log.css"
+            css_url = f"{APPLICATION_ROOT}{url_for('serve_css', _external=False)}"
 
             # Generate URL for the iframe to load the HTML
 
@@ -136,10 +123,9 @@ def serve_html():
 
 @app.route('/style.css')
 def serve_css():
-    global compiled_css_path
-    if compiled_css_path and os.path.exists(compiled_css_path):
-        #return send_file(compiled_css_path, mimetype='text/css')
-        return send_file(compiled_css_path)
+    global css_path
+    if css_path and os.path.exists(css_path):
+        return send_file(css_path, mimetype='text/css')
     else:
         return "CSS not available", 404
 
