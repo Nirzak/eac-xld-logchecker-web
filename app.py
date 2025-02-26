@@ -2,15 +2,22 @@ from flask import Flask, render_template, request, send_file, url_for
 import subprocess
 import os
 import tempfile
+import sass
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
 # Store paths for generated files
 generated_html_path = None
+compiled_css_path = None
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# Compile SCSS to CSS
+def compile_scss(scss_file_path):
+    with open(scss_file_path, 'r') as f:
+        scss_content = f.read()
+    css_output = sass.compile(string=scss_content)
+    return css_output
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -33,7 +40,7 @@ def index():
                 file.save(input_temp.name)
                 input_filepath = input_temp.name
 
-            # Create temporary files for HTML and JSON outputs
+            # Create temporary files for HTML and json outputs
             html_fd, html_output_filepath = tempfile.mkstemp(suffix='.html')
             os.close(html_fd)
             
@@ -60,6 +67,7 @@ def index():
             <head>
                 <meta charset="UTF-8">
                 <title>Logchecker Result</title>
+                <link rel="stylesheet" href="{url_for('serve_css')}">
             </head>
             <body>
                 <pre>{raw_html}</pre>
@@ -73,6 +81,14 @@ def index():
 
             # Store the HTML path for serving
             generated_html_path = html_output_filepath
+
+            # Compile SCSS to CSS
+            css_fd, css_filepath = tempfile.mkstemp(suffix='.css')
+            os.close(css_fd)
+            compiled_css = compile_scss('styles/log.scss')
+            with open(css_filepath, 'w') as css_file:
+                css_file.write(compiled_css)
+            compiled_css_path = css_filepath
 
             # Generate URL for the iframe to load the HTML
             output_url = url_for('serve_html', _external=False) #uncomment to server using iframe
@@ -91,6 +107,15 @@ def serve_html():
         return send_file(generated_html_path)
     else:
         return "No result available", 404
+
+@app.route('/style.css')
+def serve_css():
+    global compiled_css_path
+    if compiled_css_path and os.path.exists(compiled_css_path):
+        #return send_file(compiled_css_path, mimetype='text/css')
+        return send_file(compiled_css_path)
+    else:
+        return "CSS not available", 404
 
 if __name__ == '__main__':
     app.run('127.0.0.1',port=5050,debug=True)
