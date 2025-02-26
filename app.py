@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, url_for, make_request
+from flask import Flask, render_template, request, send_file, url_for, make_response
 import subprocess
 import os
 import tempfile
@@ -26,6 +26,9 @@ def index():
     global generated_html_path, css_path
     output_url = None
     details_summary = {}
+    input_filepath = None
+    html_output_filepath = None
+    json_output_filepath = None
 
     if request.method == 'POST':
         if 'logfile' not in request.files:
@@ -45,6 +48,12 @@ def index():
             with tempfile.NamedTemporaryFile(delete=False, suffix='_' + safe_filename) as input_temp:
                 file.save(input_temp.name)
                 input_filepath = input_temp.name
+            try:
+                with open(input_filepath, 'r', encoding='utf-16') as f:
+                    f.read()
+            except UnicodeDecodeError:
+                os.remove(input_filepath)
+                return "File contains invalid UTF-8 characters. Please upload a valid text file.", 400
 
             # Create temporary files for HTML and JSON outputs
             html_fd, html_output_filepath = tempfile.mkstemp(suffix='.html')
@@ -106,20 +115,24 @@ def index():
             css_path="styles/log.css"
             css_url = f"{APPLICATION_ROOT}{url_for('serve_css', _external=False)}"
 
-        
+
         finally:
-            # Clean up the uploaded input file
-            if os.path.exists(input_filepath):
-                os.remove(input_filepath)
-            if os.path.exists(json_output_filepath):
-                os.remove(json_output_filepath)
+            # Clean up all temporary files, even if an error occurs
+            for filepath in (input_filepath, json_output_filepath):
+                if filepath is not None and os.path.exists(filepath):
+                    try:
+                        os.remove(filepath)
+                    except Exception as e:
+                        print(f"Error removing {filepath}: {e}")
+
     
     return render_template('index.html', details=details_summary, has_output=bool(generated_html_path))
+
 
 @app.route('/result')
 def serve_html():
     global generated_html_path
-    if generated_html_path and os.path.exists(generated_html_path):
+    if generated_html_path is not None and os.path.exists(generated_html_path):
         try:
             # Serve the file
             response = make_response(send_file(generated_html_path))
@@ -147,4 +160,4 @@ def add_security_headers(response):
     return response
 
 if __name__ == '__main__':
-    app.run('127.0.0.1',port=5050)
+    app.run('127.0.0.1',port=5050,debug=True)
