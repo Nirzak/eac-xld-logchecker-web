@@ -12,12 +12,12 @@
     .container {
       max-width: 900px;
     }
-    .output-iframe {
-      width: 100%;
-      height: 700px;
-      border: none;
+    .output-container {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-top: 1px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      margin-top: 20px;
     }
   </style>
 </head>
@@ -33,21 +33,39 @@
       <button type="submit" class="btn btn-primary">Analyze</button>
     </div>
   </form>
-
+  
   {% if details %}
-  <h3 class="mt-4">Summary Details:</h3>
-  <ul class="list-group">
-    {% for key, value in details.items() %}
-    <li class="list-group-item"><strong>{{ key.capitalize() }}:</strong> {{ value }}</li>
-    {% endfor %}
-  </ul>
+    <h3 class="mt-4">Summary Details:</h3>
+    <ul class="list-group">
+      {% for key, value in details.items() %}
+      <li class="list-group-item"><strong>{{ key.capitalize() }}:</strong> {{ value }}</li>
+      {% endfor %}
+    </ul>
   {% endif %}
-
-  {% if output_url %}
-    <h2 class="mt-4">Analysis Result</h2>
-    <iframe class="output-iframe" src="{{ output_url }}"></iframe>
+  
+  {% if has_output %}
+    <h3 class="mt-4">Log Output:</h3>
+    <div id="output-container" class="output-container">Loading...</div>
   {% endif %}
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const outputContainer = document.getElementById("output-container");
+
+  if (outputContainer) {
+    fetch("/logchecker/result")
+      .then(response => response.text())
+      .then(data => {
+        outputContainer.innerHTML = data;
+      })
+      .catch(error => {
+        outputContainer.innerHTML = "Error loading output.";
+      });
+  }
+});
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

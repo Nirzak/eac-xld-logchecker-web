@@ -97,11 +97,6 @@ def index():
 
             css_path="styles/log.css"
             css_url = f"{APPLICATION_ROOT}{url_for('serve_css', _external=False)}"
-
-            # Generate URL for the iframe to load the HTML
-
-            output_url = url_for('serve_html', _external=False)
-            output_url = f"{APPLICATION_ROOT}{output_url}"
             
         
         finally:
@@ -111,7 +106,7 @@ def index():
             if os.path.exists(json_output_filepath):
                 os.remove(json_output_filepath)
     
-    return render_template('index.html', output_url=output_url, details=details_summary)
+    return render_template('index.html', details=details_summary, has_output=bool(generated_html_path))
 
 @app.route('/result')
 def serve_html():
