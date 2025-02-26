@@ -24,9 +24,12 @@
 <body>
 <div class="container">
   <h1 class="mb-4 text-center">EAC XLD Logchecker</h1>
+  {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
   <form method="post" enctype="multipart/form-data" class="mb-4">
     <div class="mb-3">
-      <label for="logfile" class="form-label">Upload Log File</label>
+      <label for="logfile" class="form-label">Upload Log File (Only .txt and .log files supported)</label>
       <input type="file" class="form-control" id="logfile" name="logfile" required>
     </div>
     <div class="text-center">
