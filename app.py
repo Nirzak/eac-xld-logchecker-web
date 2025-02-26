@@ -100,7 +100,7 @@ def index():
             with open(json_output_filepath, 'r', encoding='utf-8') as f:
                 details_json = json.load(f)
             # Exclude the "details" key
-            details_summary = {k: v for k, v in details_json.items() if k != 'details'}
+            details_summary = {k: v for k, v in details_json.items()}
 
 
             css_path="styles/log.css"
