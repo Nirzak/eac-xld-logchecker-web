@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, url_for
+from flask import Flask, render_template, request, send_file, url_for, make_request
 import subprocess
 import os
 import tempfile
@@ -120,7 +120,16 @@ def index():
 def serve_html():
     global generated_html_path
     if generated_html_path and os.path.exists(generated_html_path):
-        return send_file(generated_html_path)
+        try:
+            # Serve the file
+            response = make_response(send_file(generated_html_path))
+            # Delete the file after serving
+            if os.path.exists(generated_html_path):
+                os.remove(generated_html_path)
+            generated_html_path = None  # Reset the global variable
+            return response
+        except Exception as e:
+            return f"Error serving file: {str(e)}", 500
     else:
         return "No result available", 404
 
