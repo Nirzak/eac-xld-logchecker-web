@@ -7,6 +7,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
+APPLICATION_ROOT = "/logchecker"
+
 # Store paths for generated files
 generated_html_path = None
 compiled_css_path = None
@@ -67,7 +69,7 @@ def index():
             <head>
                 <meta charset="UTF-8">
                 <title>Logchecker Result</title>
-                <link rel="stylesheet" href="{url_for('serve_css')}">
+                <link rel="stylesheet" href="{APPLICATION_ROOT}{url_for('serve_css')}">
             </head>
             <body>
                 <pre>{raw_html}</pre>
@@ -91,7 +93,10 @@ def index():
             compiled_css_path = css_filepath
 
             # Generate URL for the iframe to load the HTML
-            output_url = url_for('serve_html', _external=False) #uncomment to server using iframe
+
+            output_url = url_for('serve_html', _external=False)
+            output_url = f"{APPLICATION_ROOT}{output_url}"
+            
         
         finally:
             # Clean up the uploaded input file
