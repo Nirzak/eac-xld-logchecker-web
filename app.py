@@ -10,10 +10,10 @@ app = Flask(__name__)
 
 APPLICATION_ROOT = "/logchecker"
 
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
+
 # Only allow certain file types
 ALLOWED_EXTENSIONS = {'log', 'txt'}
-
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
 
 # Store paths for generated files
 generated_html_path = None
@@ -21,10 +21,9 @@ generated_html_path = None
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    global generated_html_path
+    global generated_html_path, css_path
     output_url = None
     details_summary = {}
 
@@ -47,7 +46,7 @@ def index():
                 file.save(input_temp.name)
                 input_filepath = input_temp.name
 
-            # Create temporary files for HTML and json outputs
+            # Create temporary files for HTML and JSON outputs
             html_fd, html_output_filepath = tempfile.mkstemp(suffix='.html')
             os.close(html_fd)
             json_fd, json_output_filepath = tempfile.mkstemp(suffix='.json')
@@ -74,6 +73,8 @@ def index():
             allowed_attributes = {'span': ['class']}  # Allow class for styling
             sanitized_html = bleach.clean(raw_html, tags=allowed_tags, attributes=allowed_attributes)
 
+
+
             # Wrap the content in <pre> tag
             wrapped_html = f"""
             <!DOCTYPE html>
@@ -84,7 +85,7 @@ def index():
                 <link rel="stylesheet" href="{APPLICATION_ROOT}{url_for('serve_css')}">
             </head>
             <body>
-                <pre>{sanitized_html}</pre>
+              <pre>{sanitized_html}</pre>
             </body>
             </html>
             """
@@ -102,10 +103,9 @@ def index():
             # Exclude the "details" key
             details_summary = {k: v for k, v in details_json.items()}
 
-
             css_path="styles/log.css"
             css_url = f"{APPLICATION_ROOT}{url_for('serve_css', _external=False)}"
-            
+
         
         finally:
             # Clean up the uploaded input file
@@ -134,8 +134,8 @@ def serve_css():
 
 @app.after_request
 def add_security_headers(response):
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' cdn.jsdelivr.net 'unsafe-inline'; frame-ancestors 'none';"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' cdn.jsdelivr.net cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' cdn.jsdelivr.net 'unsafe-inline'; frame-ancestors 'none';"
     return response
 
 if __name__ == '__main__':
-    app.run('127.0.0.1',port=5050,debug=True)
+    app.run('127.0.0.1',port=5050)

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Logchecker Analysis</title>
+  <title>EAC and XLD Logchecker</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -23,7 +23,7 @@
 </head>
 <body>
 <div class="container">
-  <h1 class="mb-4 text-center">Logchecker Analysis</h1>
+  <h1 class="mb-4 text-center">EAC XLD Logchecker</h1>
   <form method="post" enctype="multipart/form-data" class="mb-4">
     <div class="mb-3">
       <label for="logfile" class="form-label">Upload Log File</label>
@@ -55,7 +55,8 @@
                 </ul>
            {% endif %}
   {% endif %}
-  
+
+
   {% if has_output %}
     <h3 class="mt-4">Log Output:</h3>
     <div id="output-container" class="output-container">Loading...</div>
