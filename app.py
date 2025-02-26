@@ -3,6 +3,7 @@ import subprocess
 import os
 import tempfile
 import json
+import bleach
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -11,6 +12,8 @@ APPLICATION_ROOT = "/logchecker"
 
 # Only allow certain file types
 ALLOWED_EXTENSIONS = {'log', 'txt'}
+
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
 
 # Store paths for generated files
 generated_html_path = None
@@ -66,6 +69,11 @@ def index():
             with open(html_output_filepath, 'r', encoding='utf-8') as f:
                 raw_html = f.read()
 
+            # Sanitize the HTML, allowing only safe tags and attributes
+            allowed_tags = ['span', 'div', 'p', 'strong', 'em', 'br']  # Adjust based on logchecker output
+            allowed_attributes = {'span': ['class']}  # Allow class for styling
+            sanitized_html = bleach.clean(raw_html, tags=allowed_tags, attributes=allowed_attributes)
+
             # Wrap the content in <pre> tag
             wrapped_html = f"""
             <!DOCTYPE html>
@@ -76,7 +84,7 @@ def index():
                 <link rel="stylesheet" href="{APPLICATION_ROOT}{url_for('serve_css')}">
             </head>
             <body>
-                <pre>{raw_html}</pre>
+                <pre>{sanitized_html}</pre>
             </body>
             </html>
             """
@@ -123,6 +131,11 @@ def serve_css():
         return send_file(css_path, mimetype='text/css')
     else:
         return "CSS not available", 404
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' cdn.jsdelivr.net 'unsafe-inline'; frame-ancestors 'none';"
+    return response
 
 if __name__ == '__main__':
     app.run('127.0.0.1',port=5050,debug=True)
