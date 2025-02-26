@@ -6,6 +6,7 @@ import tempfile
 import json
 import bleach
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 
 # Configure logging
 logging.basicConfig(
@@ -38,6 +39,11 @@ def detect_encoding(filepath):
         except UnicodeDecodeError:
             continue
     raise UnicodeDecodeError("File is not encoded in UTF-8 or UTF-16. Please use a valid text file.")
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_file_error(e):
+    logger.error(f"File upload exceeded MAX_CONTENT_LENGTH (200 KB): {str(e)}")
+    return render_template('index.html', error="File size exceeds the maximum limit of 200 KB. Please upload a smaller file."), 413
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
