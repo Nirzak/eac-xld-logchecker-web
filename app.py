@@ -10,9 +10,15 @@ app = Flask(__name__)
 
 APPLICATION_ROOT = "/logchecker"
 
+# Only allow certain file types
+ALLOWED_EXTENSIONS = {'log', 'txt'}
+
 # Store paths for generated files
 generated_html_path = None
 compiled_css_path = None
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Compile SCSS to CSS
 def compile_scss(scss_file_path):
@@ -24,8 +30,9 @@ def compile_scss(scss_file_path):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    global generated_html_path
+    global generated_html_path, compiled_css_path
     output_url = None
+    details_summary = {}
 
     if request.method == 'POST':
         if 'logfile' not in request.files:
@@ -34,6 +41,9 @@ def index():
         file = request.files['logfile']
         if file.filename == '':
             return "No file selected", 400
+        
+        if not allowed_file(file.filename):
+            return "File type not allowed. Only .log and .txt files are permitted.", 400
         
         safe_filename = secure_filename(file.filename)
         
