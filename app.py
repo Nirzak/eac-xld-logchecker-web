@@ -3,6 +3,7 @@ import subprocess
 import os
 import tempfile
 import sass
+import json
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -45,6 +46,8 @@ def index():
             # Create temporary files for HTML and json outputs
             html_fd, html_output_filepath = tempfile.mkstemp(suffix='.html')
             os.close(html_fd)
+            json_fd, json_output_filepath = tempfile.mkstemp(suffix='.json')
+            os.close(json_fd)
             
             # Run the logchecker command to generate both outputs
             command = ['logchecker', 'analyze', input_filepath, html_output_filepath, json_output_filepath]
@@ -84,6 +87,12 @@ def index():
             # Store the HTML path for serving
             generated_html_path = html_output_filepath
 
+            # Read and parse the JSON details
+            with open(json_output_filepath, 'r', encoding='utf-8') as f:
+                details_json = json.load(f)
+            # Exclude the "details" key
+            details_summary = {k: v for k, v in details_json.items() if k != 'details'}
+
             # Compile SCSS to CSS
             css_fd, css_filepath = tempfile.mkstemp(suffix='.css')
             os.close(css_fd)
@@ -102,6 +111,8 @@ def index():
             # Clean up the uploaded input file
             if os.path.exists(input_filepath):
                 os.remove(input_filepath)
+            if os.path.exists(json_output_filepath):
+                os.remove(json_output_filepath)
     
     return render_template('index.html', output_url=output_url, details=details_summary)
 

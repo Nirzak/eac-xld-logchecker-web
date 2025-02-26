@@ -33,7 +33,16 @@
       <button type="submit" class="btn btn-primary">Analyze</button>
     </div>
   </form>
-  
+
+  {% if details %}
+  <h3 class="mt-4">Summary Details:</h3>
+  <ul class="list-group">
+    {% for key, value in details.items() %}
+    <li class="list-group-item"><strong>{{ key.capitalize() }}:</strong> {{ value }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   {% if output_url %}
     <h2 class="mt-4">Analysis Result</h2>
     <iframe class="output-iframe" src="{{ output_url }}"></iframe>
