@@ -1,4 +1,4 @@
-# eac-xld-ogchecker-web
+# eac-xld-logchecker-web
 
 A Simple Web UI to check eac and xld log and view the report online.
 
