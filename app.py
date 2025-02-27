@@ -10,7 +10,6 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 # Configure logging
 logging.basicConfig(
-    filename='app.log',  # Log to a file (e.g., app.log in the same directory)
     level=logging.ERROR,  # Log only errors and above
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
@@ -18,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024  # 300KB
-APPLICATION_ROOT = "/logchecker"
-ALLOWED_EXTENSIONS = {'log', 'txt'}
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024  # 200KB
+APPLICATION_ROOT = "/logchecker"  # Custim subpath for reverse proxy eg. nginx
+ALLOWED_EXTENSIONS = {'log', 'txt'} # Allowed extensions
 
 generated_html_path = None
 css_path = None
