@@ -1,13 +1,12 @@
 FROM python:3.12-slim AS builder
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl ca-certificates jq && \
+    apt-get install -y --no-install-recommends curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Fetch latest logchecker.phar from GitHub releases
-RUN DOWNLOAD_URL=$(curl -s https://api.github.com/repos/OPSnet/Logchecker/releases/latest \
-        | jq -r '.assets[] | select(.name == "logchecker.phar") | .browser_download_url') && \
-    curl -fSL -o /tmp/logchecker "$DOWNLOAD_URL" && \
+# Fetch logchecker.phar from GitHub releases
+RUN curl -fSL -o /tmp/logchecker \
+    "https://github.com/OPSnet/Logchecker/releases/latest/download/logchecker.phar" && \
     chmod +x /tmp/logchecker
 
 FROM python:3.12-slim
@@ -24,13 +23,16 @@ COPY --from=builder /tmp/logchecker /usr/local/bin/logchecker
 WORKDIR /app
 
 COPY requirements.txt .
-RUN apt-get update && \
-    pip install --no-cache-dir -r requirements.txt && \
-    rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p /app/logs
+# Create non-root user and set up logs directory
+RUN useradd --create-home appuser && \
+    mkdir -p /app/logs && \
+    chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 5050
 
