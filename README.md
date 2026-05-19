@@ -2,7 +2,19 @@
 
 A Simple Web UI to check eac and xld log and view the report online.
 
-## Requirements
+## Run with Docker Compose [Recommended]
+
+You can easily run the application using Docker Compose. Make sure you have Docker and Docker Compose installed.
+
+```bash
+docker-compose up -d
+```
+
+The web app will be available at `http://localhost:5050`.
+
+## Steps for non docker environments
+
+### Requirements
 
 * PHP 8.1+
 * logchecker.phar file : [releases](https://github.com/OPSnet/Logchecker/releases) (Download and install it by the following command)
@@ -16,24 +28,23 @@ chmod +x /usr/local/bin/logchecker
 * Bleach (pip3 install bleach)
 
 
-## Optional Requirements
+### Optional Requirements
 
-* Python 3.5+
-* [cchardet](https://github.com/PyYoshi/cChardet) (or [chardet](https://github.com/chardet/chardet))
+* Python 3.10+
 * [eac_logchecker.py](https://github.com/OPSnet/eac_logchecker.py)
 * [xld_logchecker.py](https://github.com/OPSnet/xld_logchecker.py)
 
 ```bash
-pip3 install cchardet eac-logchecker xld-logchecker
+pip3 install eac-logchecker xld-logchecker
 ```
 
-## Run the Web App & Use
+### Run the Web App & Use
 
 ```bash
 python3 app.py
 ```
 
-## To run in a Production Envrionment
+### To run in a Production Envrionment
 
 ```bash
 sudo apt install gunicorn
@@ -41,7 +52,7 @@ sudo apt install gunicorn
 gunicorn --workers=<number-of-your-worker> app:app --daemon
 ```
 
-## Nginx Reverse Proxy Config
+### Nginx Reverse Proxy Config
 
 ```
     location /logchecker/ {
@@ -53,7 +64,5 @@ gunicorn --workers=<number-of-your-worker> app:app --daemon
         rewrite ^/logchecker(/.*)$ $1 break;
     }
 ```
-
-
 
 
