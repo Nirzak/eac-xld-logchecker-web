@@ -61,9 +61,9 @@
   {% endif %}
 
 
-  {% if has_output %}
+  {% if result_id %}
     <h3 class="mt-4">Log Output:</h3>
-    <div id="output-container" class="output-container">Loading...</div>
+    <div id="output-container" class="output-container" data-result-id="{{ result_id }}">Loading...</div>
   {% endif %}
 </div>
 
@@ -72,7 +72,8 @@ document.addEventListener("DOMContentLoaded", function() {
   const outputContainer = document.getElementById("output-container");
 
   if (outputContainer) {
-    fetch("/logchecker/result")
+    const resultId = outputContainer.getAttribute("data-result-id");
+    fetch("/logchecker/result/" + resultId)
       .then(response => response.text())
       .then(data => {
         outputContainer.innerHTML = data;

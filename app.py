@@ -4,6 +4,7 @@ import subprocess
 import os
 import tempfile
 import json
+import uuid
 import bleach
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -18,11 +19,11 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024  # 200KB
-APPLICATION_ROOT = "/logchecker"  # Custim subpath for reverse proxy eg. nginx
+APPLICATION_ROOT = "/logchecker"  # Custom subpath for reverse proxy eg. nginx
 ALLOWED_EXTENSIONS = {'log', 'txt'} # Allowed extensions
 
-generated_html_path = None
-css_path = None
+RESULTS_DIR = os.path.join(tempfile.gettempdir(), 'logchecker_results')
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 def detect_encoding(filepath):
     """
@@ -49,9 +50,9 @@ def allowed_file(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    global generated_html_path, css_path
     error = None
     details_json = None
+    result_id = None
 
     if request.method == 'POST':
         if 'logfile' not in request.files:
@@ -121,13 +122,13 @@ def index():
                             with open(html_output_filepath, 'w', encoding='utf-8') as f:
                                 f.write(wrapped_html)
 
-                            generated_html_path = html_output_filepath
+                            result_id = uuid.uuid4().hex
+                            result_path = os.path.join(RESULTS_DIR, f'{result_id}.html')
+                            os.rename(html_output_filepath, result_path)
+                            html_output_filepath = None
 
                             with open(json_output_filepath, 'r', encoding='utf-8') as f:
                                 details_json = json.load(f)
-                            
-                            css_path = "styles/log.css"
-                            css_url = f"{APPLICATION_ROOT}{url_for('serve_css', _external=False)}"
 
                 except Exception as e:
                     error = "An error occurred. Please try again."
@@ -144,30 +145,29 @@ def index():
                         except Exception as e:
                             logger.error(f"Error removing JSON file {json_output_filepath}: {str(e)}")
 
-    return render_template('index.html', details=details_json, has_output=bool(generated_html_path), error=error)
+    return render_template('index.html', details=details_json, result_id=result_id, error=error)
 
-@app.route('/result')
-def serve_html():
-    global generated_html_path
-    if generated_html_path is not None and os.path.exists(generated_html_path):
+@app.route('/result/<result_id>')
+def serve_html(result_id):
+    if not result_id.isalnum():
+        return "Invalid result ID", 400
+    result_path = os.path.join(RESULTS_DIR, f'{result_id}.html')
+    if os.path.exists(result_path):
         try:
-            response = make_response(send_file(generated_html_path))
-            if os.path.exists(generated_html_path):
-                os.remove(generated_html_path)
-            generated_html_path = None
+            response = make_response(send_file(result_path))
+            os.remove(result_path)
             return response
         except Exception as e:
-            error_msg = "An error occurred while serving the file. Please try again."
             logger.error(f"Error serving file: {str(e)}")
-            return error_msg, 500
+            return "An error occurred while serving the file. Please try again.", 500
     else:
         return "No result available", 404
 
 @app.route('/style.css')
 def serve_css():
-    global css_path
-    if css_path is not None and os.path.exists(css_path):
-        return send_file(css_path)
+    css_file = os.path.join(os.path.dirname(__file__), 'styles', 'log.css')
+    if os.path.exists(css_file):
+        return send_file(css_file)
     else:
         return "CSS not available", 404
 
