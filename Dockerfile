@@ -1,5 +1,7 @@
 FROM python:3.12-slim AS builder
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
@@ -10,6 +12,8 @@ RUN curl -fSL -o /tmp/logchecker \
     chmod +x /tmp/logchecker
 
 FROM python:3.12-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install PHP CLI (required to run logchecker.phar)
 RUN apt-get update && \
