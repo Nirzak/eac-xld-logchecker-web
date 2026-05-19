@@ -3,6 +3,9 @@ services:
     build: .
     image: ghcr.io/${GITHUB_REPOSITORY:-nirzak/eac-xld-logchecker-web}:latest
     container_name: logchecker-web
+    environment:
+      - PUID=1002
+      - PGID=1002
     ports:
       - "5050:5050"
     volumes:
