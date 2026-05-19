@@ -25,9 +25,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends g++ && \
     pip install --no-cache-dir -r requirements.txt && \
-    apt-get purge -y --auto-remove g++ && \
     rm -rf /var/lib/apt/lists/*
 
 COPY . .
