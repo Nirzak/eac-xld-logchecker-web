@@ -557,6 +557,10 @@
       position: relative;
     }
 
+    [data-theme="light"] .log-output-container {
+      color: #1e293b;
+    }
+
     .log-output-container .loading-pulse {
       display: inline-block;
       color: var(--text-muted);
@@ -568,30 +572,7 @@
       50% { opacity: 1; }
     }
 
-    /* ============================================
-       Footer
-       ============================================ */
-    .app-footer {
-      text-align: center;
-      margin-top: 48px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border-color);
-    }
 
-    .app-footer p {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
-    .app-footer a {
-      color: var(--accent-primary);
-      text-decoration: none;
-      transition: color var(--transition-fast);
-    }
-
-    .app-footer a:hover {
-      color: var(--accent-secondary);
-    }
 
     /* ============================================
        Animations
@@ -744,10 +725,7 @@
     </div>
     {% endif %}
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <p>Built with <a href="https://github.com/Esgariot/logchecker" target="_blank" rel="noopener noreferrer">logchecker</a></p>
-    </footer>
+
 
   </div>
 
