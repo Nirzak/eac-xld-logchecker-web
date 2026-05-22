@@ -1,34 +1,55 @@
+/* ============================================
+   Log Output Styles — Dark & Light Mode
+   ============================================ */
+
 pre,
 blockquote {
-  color: #444; }
-
-.log1 {
-  color: purple; }
-
-.log2 {
-  color: yellow; }
-
-.log3 {
-  color: blue; }
-
-.log4 {
-  font-weight: bold; }
-
-.good {
-  font-weight: bold;
-  color: green; }
-
-.bad {
-  font-weight: bold;
-  color: red; }
-
-.goodish {
-  font-weight: bold;
-  color: #35BF00; }
-
-.badish {
-  font-weight: bold;
-  color: #E5B244; }
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
 
 pre {
-  overflow: auto; }
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+}
+
+/* Log category colors — dark mode defaults */
+.log1 {
+  color: #c084fc;
+}
+
+.log2 {
+  color: #fbbf24;
+}
+
+.log3 {
+  color: #60a5fa;
+}
+
+.log4 {
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.good {
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.bad {
+  font-weight: 700;
+  color: #f87171;
+}
+
+.goodish {
+  font-weight: 700;
+  color: #86efac;
+}
+
+.badish {
+  font-weight: 700;
+  color: #fbbf24;
+}
