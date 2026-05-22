@@ -95,8 +95,6 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   transition: background-color var(--transition-base), color var(--transition-base);
 }
 
