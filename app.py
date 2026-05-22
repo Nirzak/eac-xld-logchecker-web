@@ -164,16 +164,32 @@ def serve_html(result_id):
         return "No result available", 404
 
 @app.route('/style.css')
-def serve_css():
+def serve_log_css():
     css_file = os.path.join(os.path.dirname(__file__), 'styles', 'log.css')
     if os.path.exists(css_file):
         return send_file(css_file)
     else:
         return "CSS not available", 404
 
+@app.route('/main.css')
+def serve_main_css():
+    css_file = os.path.join(os.path.dirname(__file__), 'styles', 'main.css')
+    if os.path.exists(css_file):
+        return send_file(css_file)
+    else:
+        return "CSS not available", 404
+
+@app.route('/main.js')
+def serve_main_js():
+    js_file = os.path.join(os.path.dirname(__file__), 'scripts', 'main.js')
+    if os.path.exists(js_file):
+        return send_file(js_file)
+    else:
+        return "JS not available", 404
+
 @app.after_request
 def add_security_headers(response):
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src fonts.gstatic.com; frame-ancestors 'none';"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src fonts.gstatic.com; frame-ancestors 'none';"
     return response
 
 if __name__ == '__main__':
