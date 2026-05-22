@@ -111,7 +111,7 @@ def index():
                             <head>
                                 <meta charset="UTF-8">
                                 <title>Logchecker Result</title>
-                                <link rel="stylesheet" href="{APPLICATION_ROOT}{url_for('serve_css')}">
+                                <link rel="stylesheet" href="{APPLICATION_ROOT}{url_for('serve_log_css')}">
                             </head>
                             <body>
                                 <pre>{raw_html}</pre>
