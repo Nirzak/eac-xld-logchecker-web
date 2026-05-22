@@ -799,14 +799,24 @@ document.addEventListener("DOMContentLoaded", function() {
     ["dragenter", "dragover"].forEach(evt => {
       dropZone.addEventListener(evt, function(e) {
         e.preventDefault();
+        e.stopPropagation();
         dropZone.classList.add("dragover");
       });
     });
-    ["dragleave", "drop"].forEach(evt => {
-      dropZone.addEventListener(evt, function(e) {
-        e.preventDefault();
-        dropZone.classList.remove("dragover");
-      });
+    dropZone.addEventListener("dragleave", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove("dragover");
+    });
+    dropZone.addEventListener("drop", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        fileNameEl.textContent = "📄 " + e.dataTransfer.files[0].name;
+        fileNameEl.classList.add("visible");
+      }
     });
   }
 
