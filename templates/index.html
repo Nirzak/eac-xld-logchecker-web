@@ -562,8 +562,8 @@
       transition: all var(--transition-smooth);
     }
 
-    /* Fullscreen button */
-    .btn-fullscreen {
+    /* Expand button (inline, top-right of log output) */
+    .btn-expand {
       position: absolute;
       top: 8px;
       right: 8px;
@@ -584,53 +584,142 @@
       opacity: 0.7;
     }
 
-    .btn-fullscreen:hover {
+    .btn-expand:hover {
       opacity: 1;
       border-color: var(--border-hover);
       color: var(--accent-primary);
       background: var(--bg-input-hover);
     }
 
-    .btn-fullscreen svg {
+    .btn-expand svg {
       width: 16px;
       height: 16px;
     }
 
-    .btn-fullscreen .icon-expand { display: block; }
-    .btn-fullscreen .icon-collapse { display: none; }
-
-    /* Fullscreen mode */
-    .log-output-wrapper.fullscreen {
+    /* ============================================
+       Log Modal Overlay
+       ============================================ */
+    .log-modal-backdrop {
       position: fixed;
       inset: 0;
+      z-index: 9998;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .log-modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .log-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.92);
       z-index: 9999;
-      padding: 0;
-      margin: 0;
+      width: 90vw;
+      max-width: 1200px;
+      height: 85vh;
+      background: var(--bg-card-solid);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
       display: flex;
       flex-direction: column;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease;
     }
 
-    .log-output-wrapper.fullscreen .log-output-container {
-      max-height: none;
-      height: 100vh;
-      border-radius: 0;
-      border: none;
-      padding: 48px 32px 32px;
-      background: var(--bg-primary);
-    }
-
-    .log-output-wrapper.fullscreen .btn-fullscreen {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 10000;
+    .log-modal.open {
       opacity: 1;
-      width: 40px;
-      height: 40px;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
     }
 
-    .log-output-wrapper.fullscreen .btn-fullscreen .icon-expand { display: none; }
-    .log-output-wrapper.fullscreen .btn-fullscreen .icon-collapse { display: block; }
+    .log-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .log-modal-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .btn-modal-close {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all var(--transition-base);
+    }
+
+    .btn-modal-close:hover {
+      border-color: var(--danger-border);
+      color: var(--danger-text);
+      background: var(--danger-bg);
+    }
+
+    .btn-modal-close svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .log-modal-body {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    [data-theme="light"] .log-modal-body {
+      color: #1e293b;
+    }
+
+    /* Light-mode overrides for modal log spans */
+    [data-theme="light"] .log-modal-body .log1 { color: #7c3aed; }
+    [data-theme="light"] .log-modal-body .log2 { color: #b45309; }
+    [data-theme="light"] .log-modal-body .log3 { color: #2563eb; }
+    [data-theme="light"] .log-modal-body .log4 { color: #0f172a; }
+    [data-theme="light"] .log-modal-body .log5 { color: #334155; }
+    [data-theme="light"] .log-modal-body .good { color: #15803d; }
+    [data-theme="light"] .log-modal-body .bad { color: #dc2626; }
+    [data-theme="light"] .log-modal-body .goodish { color: #16a34a; }
+    [data-theme="light"] .log-modal-body .badish { color: #ca8a04; }
+
+    @media (max-width: 600px) {
+      .log-modal {
+        width: 96vw;
+        height: 90vh;
+        border-radius: var(--radius-md);
+      }
+      .log-modal-body {
+        padding: 16px;
+        font-size: 0.78rem;
+      }
+    }
 
     [data-theme="light"] .log-output-container {
       color: #1e293b;
@@ -823,18 +912,12 @@
     {% if result_id %}
     <div class="card animate-in">
       <div class="section-title">Log Output</div>
-      <div class="log-output-wrapper" id="log-output-wrapper">
-        <button class="btn-fullscreen" id="btn-fullscreen" aria-label="Toggle fullscreen" title="Toggle fullscreen">
-          <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div class="log-output-wrapper">
+        <button class="btn-expand" id="btn-expand" aria-label="Expand log output" title="Expand log output">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 3 21 3 21 9"></polyline>
             <polyline points="9 21 3 21 3 15"></polyline>
             <line x1="21" y1="3" x2="14" y2="10"></line>
-            <line x1="3" y1="21" x2="10" y2="14"></line>
-          </svg>
-          <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="4 14 10 14 10 20"></polyline>
-            <polyline points="20 10 14 10 14 4"></polyline>
-            <line x1="14" y1="10" x2="21" y2="3"></line>
             <line x1="3" y1="21" x2="10" y2="14"></line>
           </svg>
         </button>
@@ -842,6 +925,21 @@
           <span class="loading-pulse">Loading analysis results…</span>
         </div>
       </div>
+    </div>
+
+    <!-- Log Modal -->
+    <div class="log-modal-backdrop" id="log-modal-backdrop"></div>
+    <div class="log-modal" id="log-modal">
+      <div class="log-modal-header">
+        <span class="log-modal-title">Log Output</span>
+        <button class="btn-modal-close" id="btn-modal-close" aria-label="Close" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="log-modal-body" id="log-modal-body"></div>
     </div>
     {% endif %}
 
@@ -925,23 +1023,42 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   }
 
-  /* ---- Fullscreen Toggle ---- */
-  const btnFullscreen = document.getElementById("btn-fullscreen");
-  const logWrapper = document.getElementById("log-output-wrapper");
+  /* ---- Log Modal ---- */
+  const btnExpand = document.getElementById("btn-expand");
+  const logModal = document.getElementById("log-modal");
+  const logModalBackdrop = document.getElementById("log-modal-backdrop");
+  const logModalBody = document.getElementById("log-modal-body");
+  const btnModalClose = document.getElementById("btn-modal-close");
 
-  if (btnFullscreen && logWrapper) {
-    btnFullscreen.addEventListener("click", function() {
-      logWrapper.classList.toggle("fullscreen");
-      document.body.style.overflow = logWrapper.classList.contains("fullscreen") ? "hidden" : "";
-    });
-
-    document.addEventListener("keydown", function(e) {
-      if (e.key === "Escape" && logWrapper.classList.contains("fullscreen")) {
-        logWrapper.classList.remove("fullscreen");
-        document.body.style.overflow = "";
-      }
-    });
+  function openLogModal() {
+    if (outputContainer && logModalBody) {
+      logModalBody.innerHTML = outputContainer.innerHTML;
+    }
+    logModal.classList.add("open");
+    logModalBackdrop.classList.add("open");
+    document.body.style.overflow = "hidden";
   }
+
+  function closeLogModal() {
+    logModal.classList.remove("open");
+    logModalBackdrop.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  if (btnExpand) {
+    btnExpand.addEventListener("click", openLogModal);
+  }
+  if (btnModalClose) {
+    btnModalClose.addEventListener("click", closeLogModal);
+  }
+  if (logModalBackdrop) {
+    logModalBackdrop.addEventListener("click", closeLogModal);
+  }
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && logModal && logModal.classList.contains("open")) {
+      closeLogModal();
+    }
+  });
 
 });
 </script>
