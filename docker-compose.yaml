@@ -1,6 +1,5 @@
 services:
   logchecker-web:
-    build: .
     image: ghcr.io/nirzak/eac-xld-logchecker-web:latest
     container_name: logchecker-web
     environment:
