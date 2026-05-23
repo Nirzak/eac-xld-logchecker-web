@@ -1,7 +1,7 @@
 services:
-  logchecker-web:
-    image: ghcr.io/nirzak/eac-xld-logchecker-web:latest
-    container_name: logchecker-web
+  logchecker:
+    image: ghcr.io/nirzak/audio-ripping-logchecker:latest
+    container_name: logchecker
     environment:
       - PUID=1002
       - PGID=1002
