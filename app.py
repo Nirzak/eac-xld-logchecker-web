@@ -193,7 +193,7 @@ def index():
                         except Exception as e:
                             logger.error(f"Error removing JSON file {json_output_filepath}: {str(e)}")
 
-    return render_template('index.html', details=details_json, result_id=result_id, error=error)
+    return render_template('index.html', details=details_json, result_id=result_id, error=error, subpath=APPLICATION_ROOT)
 
 @app.route('/result/<result_id>')
 def serve_html(result_id):

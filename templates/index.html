@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/logchecker/main.css">
+  <link rel="stylesheet" href="{{ subpath }}/main.css">
 </head>
 <body>
 
@@ -122,7 +122,7 @@
             <line x1="3" y1="21" x2="10" y2="14"></line>
           </svg>
         </button>
-        <div class="log-output-container" id="output-container" data-result-id="{{ result_id }}">
+        <div class="log-output-container" id="output-container" data-result-id="{{ result_id }}" data-subpath="{{ subpath }}">
           <span class="loading-pulse">Loading analysis results…</span>
         </div>
       </div>
@@ -146,7 +146,7 @@
 
   </div>
 
-<script src="/logchecker/main.js"></script>
+<script src="{{ subpath }}/main.js"></script>
 
 </body>
 </html>
