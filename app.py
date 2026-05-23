@@ -6,24 +6,66 @@ import tempfile
 import json
 import uuid
 import bleach
+import re
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
-# Configure logging
+# Configure logging from environment variable
+_LOG_LEVEL = os.environ.get('LOG_LEVEL', 'error').upper()
+_VALID_LOG_LEVELS = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
+if _LOG_LEVEL not in _VALID_LOG_LEVELS:
+    _LOG_LEVEL = 'ERROR'
+
+_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+_LOG_FILE = '/app/logs/logchecker.log'
+
 logging.basicConfig(
-    level=logging.ERROR,  # Log only errors and above
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=getattr(logging, _LOG_LEVEL),
+    format=_LOG_FORMAT,
+    handlers=[
+        logging.StreamHandler(),  # stdout → docker logs
+        logging.FileHandler(_LOG_FILE),  # → /app/logs/logchecker.log
+    ]
 )
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024  # 200KB
-APPLICATION_ROOT = "/logchecker"  # Custom subpath for reverse proxy eg. nginx
+APPLICATION_ROOT = os.environ.get('SUBPATH', '/logchecker')  # Custom subpath for reverse proxy eg. nginx
 ALLOWED_EXTENSIONS = {'log', 'txt'} # Allowed extensions
 
 RESULTS_DIR = os.path.join(tempfile.gettempdir(), 'logchecker_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
+
+def _sanitize_for_log(value):
+    """Sanitize a string for safe inclusion in log messages.
+
+    Prevents log injection/forgery by stripping control characters,
+    ANSI escape sequences, and newlines that could be used to forge
+    log entries or obscure malicious activity.
+    """
+    # Remove ANSI escape sequences
+    value = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', value)
+    # Replace newlines and carriage returns to prevent log line injection
+    value = value.replace('\n', '').replace('\r', '')
+    # Strip other control characters (ASCII 0-31 except tab)
+    value = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', value)
+    # Truncate to a reasonable length to prevent log flooding
+    return value[:255]
+
+
+def _get_client_ip():
+    """Get the real client IP, respecting X-Forwarded-For behind a reverse proxy."""
+    # X-Forwarded-For may contain: client, proxy1, proxy2
+    forwarded_for = request.headers.get('X-Forwarded-For', '')
+    if forwarded_for:
+        # Take the first (leftmost) IP — the original client
+        ip = forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.remote_addr or 'unknown'
+    return _sanitize_for_log(ip)
+
 
 def detect_encoding(filepath):
     """
@@ -42,7 +84,8 @@ def detect_encoding(filepath):
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_large_file_error(e):
-    logger.error(f"File upload exceeded MAX_CONTENT_LENGTH (200 KB): {str(e)}")
+    client_ip = _get_client_ip()
+    logger.warning(f"[{client_ip}] File upload exceeded MAX_CONTENT_LENGTH (200 KB)")
     return render_template('index.html', error="File size exceeds the maximum limit of 200 KB. Please upload a smaller file."), 413
 
 def allowed_file(filename):
@@ -55,19 +98,26 @@ def index():
     result_id = None
 
     if request.method == 'POST':
+        client_ip = _get_client_ip()
         if 'logfile' not in request.files:
             error = "No file part"
+            logger.info(f"[{client_ip}] Upload attempt with no file part")
         else:
             file = request.files['logfile']
             if file.filename == '':
                 error = "No file selected"
+                logger.info(f"[{client_ip}] Upload attempt with empty filename")
             elif not allowed_file(file.filename):
                 error = "File type not allowed. Only .log and .txt files are permitted."
+                safe_name = _sanitize_for_log(secure_filename(file.filename))
+                logger.warning(f"[{client_ip}] Rejected disallowed file type: {safe_name}")
             else:
                 safe_filename = secure_filename(file.filename)
                 input_filepath = None
                 html_output_filepath = None
                 json_output_filepath = None
+                safe_name_log = _sanitize_for_log(safe_filename)
+                logger.info(f"[{client_ip}] Checking file: {safe_name_log}")
                 try:
                     with tempfile.NamedTemporaryFile(delete=False, suffix='_' + safe_filename) as input_temp:
                         file.save(input_temp.name)
@@ -79,7 +129,7 @@ def index():
                             f.read()
                     except UnicodeDecodeError:
                         error = "File is not a supported log file. Please try again with a valid UTF-8 or UTF-16 text file."
-                        logger.error(f"Encoding detection failed for {input_filepath}: {str(e)}")
+                        logger.warning(f"[{client_ip}] Encoding detection failed for file: {safe_name_log}")
                         if input_filepath is not None and os.path.exists(input_filepath):
                             try:
                                 os.remove(input_filepath)
@@ -95,7 +145,8 @@ def index():
                         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                         if result.returncode != 0:
                             error = "Failed to process the file. Please check your input and try again."
-                            logger.error(f"Error generating outputs: {result.stderr}")
+                            logger.error(f"[{client_ip}] Logchecker analysis failed for file: {safe_name_log}")
+                            logger.debug(f"[{client_ip}] Logchecker stderr: {_sanitize_for_log(result.stderr)}")
                         else:
                             with open(html_output_filepath, 'r', encoding='utf-8') as f:
                                 raw_html = f.read()
@@ -130,9 +181,13 @@ def index():
                             with open(json_output_filepath, 'r', encoding='utf-8') as f:
                                 details_json = json.load(f)
 
+                            score = details_json.get('score', 'N/A')
+                            logger.info(f"[{client_ip}] Analysis complete for file: {safe_name_log} — score: {score}")
+
                 except Exception as e:
                     error = "An error occurred. Please try again."
-                    logger.error(f"Unexpected error in file processing: {str(e)}")
+                    logger.error(f"[{client_ip}] Unexpected error processing file {safe_name_log}: {type(e).__name__}")
+                    logger.debug(f"[{client_ip}] Exception details: {_sanitize_for_log(str(e))}")
                 finally:
                     if input_filepath is not None and os.path.exists(input_filepath):
                         try:
@@ -145,7 +200,7 @@ def index():
                         except Exception as e:
                             logger.error(f"Error removing JSON file {json_output_filepath}: {str(e)}")
 
-    return render_template('index.html', details=details_json, result_id=result_id, error=error)
+    return render_template('index.html', details=details_json, result_id=result_id, error=error, subpath=APPLICATION_ROOT)
 
 @app.route('/result/<result_id>')
 def serve_html(result_id):
