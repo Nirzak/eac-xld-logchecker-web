@@ -6,7 +6,7 @@ services:
     environment:
       - PUID=1002
       - PGID=1002
-      - SUBPATH=/logchecker
+      - SUBPATH=/test1
       - LOG_LEVEL=error
     ports:
       - "5051:5050"
