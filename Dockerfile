@@ -42,4 +42,4 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 5050
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "4", "--log-level", "warning", "--log-file", "/app/logs/logchecker.log", "--access-logfile", "/app/logs/access.log", "--disable-redirect-access-to-syslog", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "4", "--log-level", "warning", "--log-file", "/app/logs/logchecker.log", "--access-logfile", "/app/logs/access.log", "--access-logformat", "%({X-Forwarded-For}i)s %(l)s %(u)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" \"%(a)s\"", "--disable-redirect-access-to-syslog", "app:app"]
