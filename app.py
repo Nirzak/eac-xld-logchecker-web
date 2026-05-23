@@ -16,9 +16,16 @@ _VALID_LOG_LEVELS = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
 if _LOG_LEVEL not in _VALID_LOG_LEVELS:
     _LOG_LEVEL = 'ERROR'
 
+_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+_LOG_FILE = '/app/logs/logchecker.log'
+
 logging.basicConfig(
     level=getattr(logging, _LOG_LEVEL),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format=_LOG_FORMAT,
+    handlers=[
+        logging.StreamHandler(),  # stdout → docker logs
+        logging.FileHandler(_LOG_FILE),  # → /app/logs/logchecker.log
+    ]
 )
 logger = logging.getLogger(__name__)
 
