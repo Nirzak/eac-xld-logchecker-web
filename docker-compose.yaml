@@ -1,15 +1,14 @@
 services:
-  logchecker-test:
-    image: ghcr.io/nirzak/eac-xld-logchecker-web:test
-    container_name: logchecker-test
-    build: .
+  logchecker-web:
+    image: ghcr.io/nirzak/eac-xld-logchecker-web:latest
+    container_name: logchecker-web
     environment:
       - PUID=1002
       - PGID=1002
-      - SUBPATH=/test1
+      - SUBPATH=/logchecker
       - LOG_LEVEL=info
     ports:
-      - "5051:5050"
+      - "5050:5050"
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
