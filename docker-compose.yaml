@@ -7,7 +7,7 @@ services:
       - PUID=1002
       - PGID=1002
       - SUBPATH=/test1
-      - LOG_LEVEL=error
+      - LOG_LEVEL=info
     ports:
       - "5051:5050"
     volumes:
