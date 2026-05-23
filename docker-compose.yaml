@@ -2,9 +2,12 @@ services:
   logchecker-web:
     image: ghcr.io/nirzak/eac-xld-logchecker-web:latest
     container_name: logchecker-web
+    build: .
     environment:
       - PUID=1002
       - PGID=1002
+      - SUBPATH=/logchecker
+      - LOG_LEVEL=error
     ports:
       - "5050:5050"
     volumes:
