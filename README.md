@@ -16,8 +16,8 @@ The web app will be available at `http://localhost:5050`.
 
 ### Requirements
 
-* PHP 8.1+
-* logchecker.phar file : [releases](https://github.com/OPSnet/Logchecker/releases) (Download and install it by the following command)
+* PHP 8.2 and above
+* logchecker.phar file : [releases]((https://github.com/Nirzak/logchecker-fork/releases) (Download and install it by the following command)
 
 ```bash
 mv logchecker.phar /usr/local/bin/logchecker
