@@ -8,7 +8,7 @@ RUN apt-get update && \
 
 # Fetch logchecker.phar from GitHub releases
 RUN curl -fSL -o /tmp/logchecker \
-    "https://github.com/OPSnet/Logchecker/releases/latest/download/logchecker.phar" && \
+    "https://github.com/Nirzak/logchecker-fork/releases/latest/download/logchecker.phar" && \
     chmod +x /tmp/logchecker
 
 FROM python:3.12-slim
