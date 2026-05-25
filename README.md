@@ -1,6 +1,6 @@
 # audio-ripping-logchecker
 
-A Simple Web UI to check EAC, XLD and Whipper log and view the report online.
+A Simple Web UI to check EAC, XLD, dBpoweramp and Whipper log and view the report online.
 
 ## Run with Docker Compose [Recommended]
 
