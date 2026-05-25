@@ -63,8 +63,11 @@ document.addEventListener("DOMContentLoaded", function() {
   const outputContainer = document.getElementById("output-container");
   if (outputContainer) {
     const resultId = outputContainer.getAttribute("data-result-id");
-    const subpath = outputContainer.getAttribute("data-subpath") || "/logchecker";
-    fetch(subpath + "/result/" + resultId)
+    const rawSubpath = outputContainer.getAttribute("data-subpath") || '';
+    const subpath = rawSubpath.replace(/\/+$/, '');
+    const resultUrl = (subpath ? subpath : '') + "/result/" + resultId;
+
+    fetch(resultUrl)
       .then(response => response.text())
       .then(data => {
         outputContainer.innerHTML = data;

@@ -32,7 +32,13 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024  # 200KB
-APPLICATION_ROOT = os.environ.get('SUBPATH', '/logchecker')  # Custom subpath for reverse proxy eg. nginx
+raw_subpath = os.environ.get('SUBPATH', '/logchecker').strip()
+if raw_subpath in ('', '/'):
+    APPLICATION_ROOT = ''
+else:
+    if not raw_subpath.startswith('/'):
+        raw_subpath = '/' + raw_subpath
+    APPLICATION_ROOT = raw_subpath.rstrip('/')
 ALLOWED_EXTENSIONS = {'log', 'txt'} # Allowed extensions
 
 RESULTS_DIR = os.path.join(tempfile.gettempdir(), 'logchecker_results')
