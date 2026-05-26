@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, url_for, make_response
+from flask import Flask, render_template, request, send_file, url_for, make_response, jsonify
 import logging
 import subprocess
 import os
@@ -9,6 +9,8 @@ import bleach
 import re
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Configure logging from environment variable
 _LOG_LEVEL = os.environ.get('LOG_LEVEL', 'error').upper()
@@ -30,6 +32,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+RATE_LIMIT = os.environ.get('RATE_LIMIT', '30 per minute')
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[RATE_LIMIT],
+    storage_uri="memory://",
+)
 
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024  # 200KB
 raw_subpath = os.environ.get('SUBPATH', '/logchecker').strip()
@@ -92,6 +102,8 @@ def detect_encoding(filepath):
 def handle_large_file_error(e):
     client_ip = _get_client_ip()
     logger.warning(f"[{client_ip}] File upload exceeded MAX_CONTENT_LENGTH (200 KB)")
+    if request.path.startswith('/api'):
+        return jsonify({"error": "File size exceeds the maximum limit of 200 KB."}), 413
     return render_template('index.html', error="File size exceeds the maximum limit of 200 KB. Please upload a smaller file."), 413
 
 def allowed_file(filename):
@@ -229,6 +241,103 @@ def index():
                             logger.error(f"Error removing JSON file {json_output_filepath}: {str(e)}")
 
     return render_template('index.html', details=details_json, result_id=result_id, error=error, subpath=APPLICATION_ROOT)
+
+@app.route('/api', methods=['POST'])
+def api_check():
+    client_ip = _get_client_ip()
+
+    if 'logfile' not in request.files:
+        logger.info(f"[{client_ip}] API: Upload attempt with no file part")
+        return jsonify({"error": "No file part. Use multipart form field 'logfile'."}), 400
+
+    file = request.files['logfile']
+    if file.filename == '':
+        logger.info(f"[{client_ip}] API: Upload attempt with empty filename")
+        return jsonify({"error": "No file selected."}), 400
+
+    if not allowed_file(file.filename):
+        safe_name = _sanitize_for_log(secure_filename(file.filename))
+        logger.warning(f"[{client_ip}] API: Rejected disallowed file type: {safe_name}")
+        return jsonify({"error": "File type not allowed. Only .log and .txt files are permitted."}), 400
+
+    safe_filename_str = secure_filename(file.filename)
+    input_filepath = None
+    json_output_filepath = None
+    html_output_filepath = None
+    safe_name_log = _sanitize_for_log(safe_filename_str)
+    logger.info(f"[{client_ip}] API: Checking file: {safe_name_log}")
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='_' + safe_filename_str) as input_temp:
+            file.save(input_temp.name)
+            input_filepath = input_temp.name
+
+        try:
+            encoding = detect_encoding(input_filepath)
+            with open(input_filepath, 'r', encoding=encoding) as f:
+                log_content = f.read()
+
+            is_rdbarr = False
+            if "Lenovo  Slim_USB_Burner" in log_content:
+                is_rdbarr = True
+            elif re.search(r'Filename\s+[A-Za-z]:\\\d+\.', log_content):
+                is_rdbarr = True
+
+        except UnicodeDecodeError:
+            logger.warning(f"[{client_ip}] API: Encoding detection failed for file: {safe_name_log}")
+            return jsonify({"error": "File is not a supported log file. Please use a valid UTF-8 or UTF-16 text file."}), 400
+        else:
+            html_fd, html_output_filepath = tempfile.mkstemp(suffix='.html')
+            os.close(html_fd)
+            json_fd, json_output_filepath = tempfile.mkstemp(suffix='.json')
+            os.close(json_fd)
+
+            command = ['logchecker', 'analyze', input_filepath, html_output_filepath, json_output_filepath]
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode != 0:
+                logger.error(f"[{client_ip}] API: Logchecker analysis failed for file: {safe_name_log}")
+                logger.debug(f"[{client_ip}] API: Logchecker stderr: {_sanitize_for_log(result.stderr)}")
+                return jsonify({"error": "Failed to process the file. Please check your input and try again."}), 500
+
+            with open(json_output_filepath, 'r', encoding='utf-8') as f:
+                details_json = json.load(f)
+
+            if is_rdbarr:
+                try:
+                    current_score = int(details_json.get('score', 100))
+                    details_json['score'] = current_score - 100
+                except ValueError:
+                    pass
+
+                if 'details' not in details_json:
+                    details_json['details'] = []
+                details_json['details'].append("rdbarr rip detected. Score reduced by 100.")
+                details_json['rdbarr_rip'] = 'Yes'
+
+            score = details_json.get('score', 'N/A')
+            logger.info(f"[{client_ip}] API: Analysis complete for file: {safe_name_log} — score: {score}")
+            return jsonify(details_json), 200
+
+    except Exception as e:
+        logger.error(f"[{client_ip}] API: Unexpected error processing file {safe_name_log}: {type(e).__name__}")
+        logger.debug(f"[{client_ip}] API: Exception details: {_sanitize_for_log(str(e))}")
+        return jsonify({"error": "An error occurred. Please try again."}), 500
+    finally:
+        if input_filepath is not None and os.path.exists(input_filepath):
+            try:
+                os.remove(input_filepath)
+            except Exception as e:
+                logger.error(f"Error removing input file {input_filepath}: {str(e)}")
+        if json_output_filepath is not None and os.path.exists(json_output_filepath):
+            try:
+                os.remove(json_output_filepath)
+            except Exception as e:
+                logger.error(f"Error removing JSON file {json_output_filepath}: {str(e)}")
+        if html_output_filepath is not None and os.path.exists(html_output_filepath):
+            try:
+                os.remove(html_output_filepath)
+            except Exception as e:
+                logger.error(f"Error removing HTML file {html_output_filepath}: {str(e)}")
 
 @app.route('/result/<result_id>')
 def serve_html(result_id):

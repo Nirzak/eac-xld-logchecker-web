@@ -1,4 +1,5 @@
 flask
+flask-limiter[redis]
 bleach
 gunicorn
 eac-logchecker
