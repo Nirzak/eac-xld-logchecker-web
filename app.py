@@ -165,7 +165,7 @@ def index():
                                 raw_html = f.read()
 
                             if is_rdbarr:
-                                raw_html = '<div class="logchecker-notice" style="color: #ff4444; font-weight: bold; margin-bottom: 1rem;">Notice: rdbarr rip detected. Score reduced by 100.</div>\n' + raw_html
+                                raw_html = '<div class="bad">Notice: rdbarr rip detected. Score reduced by 100.</div>\n' + raw_html
 
                             # Sanitize the HTML, allowing only safe tags and attributes
                             allowed_tags = ['span', 'div', 'p', 'strong', 'em', 'br']  # Adjust based on logchecker output
