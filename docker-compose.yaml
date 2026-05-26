@@ -7,7 +7,7 @@ services:
       - PGID=1002
       - SUBPATH=/logchecker
       - LOG_LEVEL=info
-      - RATE_LIMIT=30 per minute
+      - RATE_LIMIT=1000 per minute
     ports:
       - "5050:5050"
     volumes:
