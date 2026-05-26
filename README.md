@@ -12,6 +12,33 @@ docker-compose up -d
 
 The web app will be available at `http://localhost:5050`.
 
+## API Endpoint Usage
+
+You can also use the `/api` endpoint to analyze log files programmatically. Submit a POST request with a multipart file upload:
+
+```bash
+curl -X POST https://<host>/api -F "logfile=@<file-path>"
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:5050/api -F "logfile=@my_log.log"
+```
+
+**Response (JSON):**
+```json
+{"checksum":"checksum_ok",
+"combined":false,
+"details":[],
+"language":"en",
+"ripper":"EAC",
+"score":100,
+"version":"1.6"
+}
+```
+
+**Rate Limiting:** The API endpoint has rate limiting enabled. The default limit is 30 requests per minute. You can customize this by setting the `RATE_LIMIT` environment variable (e.g., `RATE_LIMIT=1000 per minute`).
+
 ## Steps for non docker environments
 
 ### Requirements
