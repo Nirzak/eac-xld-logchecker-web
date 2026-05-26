@@ -132,7 +132,14 @@ def index():
                     try:
                         encoding = detect_encoding(input_filepath)
                         with open(input_filepath, 'r', encoding=encoding) as f:
-                            f.read()
+                            log_content = f.read()
+                            
+                        is_rdbarr = False
+                        if "Lenovo  Slim_USB_Burner" in log_content:
+                            is_rdbarr = True
+                        elif re.search(r'Filename\s+[A-Za-z]:\\\d+\.', log_content):
+                            is_rdbarr = True
+
                     except UnicodeDecodeError:
                         error = "File is not a supported log file. Please try again with a valid UTF-8 or UTF-16 text file."
                         logger.warning(f"[{client_ip}] Encoding detection failed for file: {safe_name_log}")
@@ -157,9 +164,12 @@ def index():
                             with open(html_output_filepath, 'r', encoding='utf-8') as f:
                                 raw_html = f.read()
 
+                            if is_rdbarr:
+                                raw_html = '<div class="bad">Notice: rdbarr rip detected. Score reduced by 100.</div>\n' + raw_html
+
                             # Sanitize the HTML, allowing only safe tags and attributes
                             allowed_tags = ['span', 'div', 'p', 'strong', 'em', 'br']  # Adjust based on logchecker output
-                            allowed_attributes = {'span': ['class']}  # Allow class for styling
+                            allowed_attributes = {'span': ['class'], 'div': ['class', 'style']}  # Allow style for our notice
                             sanitized_html = bleach.clean(raw_html, tags=allowed_tags, attributes=allowed_attributes)
 
                             wrapped_html = f"""
@@ -171,7 +181,7 @@ def index():
                                 <link rel="stylesheet" href="{APPLICATION_ROOT}{url_for('serve_log_css')}">
                             </head>
                             <body>
-                                <pre>{raw_html}</pre>
+                                <pre>{sanitized_html}</pre>
                             </body>
                             </html>
                             """
@@ -186,6 +196,18 @@ def index():
 
                             with open(json_output_filepath, 'r', encoding='utf-8') as f:
                                 details_json = json.load(f)
+                                
+                            if is_rdbarr:
+                                try:
+                                    current_score = int(details_json.get('score', 100))
+                                    details_json['score'] = current_score - 100
+                                except ValueError:
+                                    pass
+                                
+                                if 'details' not in details_json:
+                                    details_json['details'] = []
+                                details_json['details'].append("rdbarr rip detected. Score reduced by 100.")
+                                details_json['rdbarr_rip'] = 'Yes'
 
                             score = details_json.get('score', 'N/A')
                             logger.info(f"[{client_ip}] Analysis complete for file: {safe_name_log} — score: {score}")
